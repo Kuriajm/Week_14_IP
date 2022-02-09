@@ -1,0 +1,70 @@
+---
+title: "Anomaly_Detection"
+author: "Mutura Kuria"
+date: "2/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Anomaly Detection
+
+#Load the libraries
+
+```{r}
+install.packages("anomalize")
+install.packages ("tidyquant")
+library(anomalize)
+library(tidyquant)
+library(tidyverse)
+
+```
+
+# Load the Dataset
+
+```{r}
+df = read.csv('http://bit.ly/CarreFourSalesDataset')
+tail(df)
+```
+
+```{r}
+#check the data types of the two columns
+sapply(df, class)
+```
+
+# deal with the dates and change to timble
+
+```{r}
+df$Date <- as.Date(df$Date, format = "%m/%d/%y" )
+df <- as.tibble(df)
+```
+
+```{r}
+#Confirm if converted
+
+is.tibble(df)
+```
+```{r}
+#Get daily sales using aggregate function
+
+df.agg <- aggregate(df["Sales"], by=df["Date"],sum)
+tail(df.agg)
+```
+```{r}
+is_tibble(df.agg <- as.tibble(df.agg))
+```
+```{r}
+anomaly <- df.agg %>% 
+ time_decompose(Sales, method = "stl", frequency = "auto", trend = "auto") %>%
+ anomalize(remainder, method = "gesd", alpha = 0.05, max_anoms = 0.2) %>%
+ #time_recompose() %>%
+ plot_anomaly_decomposition()
+```
+
+```{r}
+anomaly
+```
+
+

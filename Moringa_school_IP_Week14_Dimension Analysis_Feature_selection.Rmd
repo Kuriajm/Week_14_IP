@@ -1,0 +1,159 @@
+---
+title: "Moringa_school_IP_Week14_Dimension Analysis_Feature_selection"
+author: "Mutura Kuria"
+date: "2/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1.0 Business Understanding
+
+Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+2.0 Loading the Dataset
+
+```{r}
+data1 <- read.csv("http://bit.ly/CarreFourDataset")
+head(data1)
+```
+```{r}
+#Summaryzing the data
+summary((data1))
+```
+# 3.0 Cleaning our Data
+ ## 3.1 Check duplicated data
+ 
+```{r}
+#Checking for duplicated rows
+duplicated_rows <- data1[duplicated(data1),]
+dim(duplicated_rows)
+```
+ 
+  -We have no duplicates
+  
+  
+## 3.2 Missing Values
+
+```{r}
+# Checking for Missing Values
+
+colSums(is.na(data1))
+```
+  - Wehave no missing values
+  
+# 3.3 Dropping unneccessary columns
+
+```{r}
+# dropping Invoice.ID column
+data1$Invoice.ID <- NULL
+```
+```{r}
+head(data1)
+
+```
+
+## 3.4 Converting data to appropriate datatypes
+
+```{r}
+# Convert data types to intergerst 
+
+data2 <- data1
+data2$Branch_Enc<-as.integer(as.factor(data2$Branch))
+# Customer Type
+data2$Customer_Type_Enc<-as.integer(as.factor(data2$Customer.type))
+# Gender
+data2$Gender_Enc<-as.integer(as.factor(data2$Gender))
+# Product.line
+data2$Product_Line_Enc<-as.integer(as.factor(data2$Product.line))
+#Payment
+data2$Payment_Enc<-as.integer(as.factor(data2$Payment))
+```
+
+```{r}
+str(data2)
+```
+
+```{r}
+# Convert time to appropriate format
+data2$hour = format(strptime(data2$Time,"%H:%M"),'%H')
+data2$minute = format(strptime(data2$Time,"%H:%M"),'%M')
+```
+
+```{r}
+install.packages("lubridate") 
+library(lubridate)
+```
+
+
+```{r}
+# Split date year, month and day. and change data type
+data2$Date <- as.Date(data2$Date, "%m/%d/%Y")
+data2$year <- year(ymd(data2$Date))
+data2$month <- month(ymd(data2$Date)) 
+data2$day <- day(ymd(data2$Date))
+```
+```{r}
+str(data2)
+```
+# 4.0 Dimensionality Reduction
+
+##Selecting Numeric fields
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+num <- select_if(data2,is.numeric)
+str(num)
+```
+
+## 4.1 Principal Component Analysis (PCA)
+
+```{r}
+# Drop the columns a constant/zero column to unit variance")"
+num <- subset(num, select = -c(gross.margin.percentage, year))
+
+
+```
+
+```{r}
+dim(num)
+```
+```{r}
+# Performing PCA with center and scale set to true
+num.pca <- prcomp(num, center = TRUE, scale. = TRUE)
+
+# summary
+summary(num.pca)
+```
+
+  --We get 14 principle components. With Pc1 having 22% variance while Pc10 having up to 95%, pca 11 to 14 should be dropped. We can compare this with t-SNE results
+
+## Stochastic Neighbour Embedding(t-SNE)
+
+```{r}
+library(Rtsne)
+tsne <- Rtsne(num, dims = 2, perplexity=30, verbose=TRUE, max_iter = 500)
+```
+```{r}
+num$Rating_num = as.integer(num$Rating)
+
+# Curating the database for analysis 
+# 
+Labels<-num$Rating_num
+num$Rating_num<-as.factor(num$Rating_num)
+
+# For plotting
+colors = rainbow(length(num$Rating_num))
+names(colors) = unique(num$Rating_num)
+
+plot(tsne$Y, t='n', main="tsne")
+text(tsne$Y, labels=num$Rating_num, col=colors[num$Rating_num])
+```
+
+

@@ -1,0 +1,123 @@
+---
+title: "Moringa_school_IP_Week14_Association_rule"
+author: "Mutura Kuria"
+date: "2/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#  Business Understanding
+
+Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). create association rules that will allow you to identify relationships between variables in the dataset. You are provided with a separate dataset that comprises groups of items that will be associated with others. Just like in the other sections, you will also be required to provide insights for your analysis.
+
+
+# lnstall neccessary Libraries
+
+```{r}
+
+install.packages("arules")
+library(arules)
+install.packages("arulesViz")
+library(arulesViz)
+```
+
+# Load the dataset
+
+```{r}
+items.data= read.csv('http://bit.ly/SupermarketDatasetII')
+head(items.data)
+```
+
+```{r}
+# Data dimensions
+dim(items.data)
+```
+
+  -The dataset has 7500 transaction and atmost 20 items purchased at once
+  
+```{r}
+#Transactions Summary 
+summary(items.data)
+```
+```{r}
+#Structure
+str(items.data)
+```
+
+  -Only olive oil is a logical data others are characters
+
+# Missing Values
+```{r}
+# Counting missing values
+colSums(is.na(items.data))
+```
+ 
+ 
+```{r}
+as.character(items.data$olive.oil)
+```
+Lets drop the logic data of olive oil
+
+```{r}
+items.data$olive.oil <- NULL
+```
+
+```{r}
+colSums(is.na(items.data))
+```
+
+# Fequencies
+```{r}
+
+# coerce data frame into transaction. Plotting the dataframe directly fails
+trans <- as(items.data, "transactions")
+
+#Lets find the most frequent item
+summary(trans)
+
+```
+Here we see the frequency is:
+  - Spinach =7498
+  - antioxydant.juice = 7497
+  -Frozen smoothie = 7497
+  
+```{r}
+# plot item frequency for first 15 items
+itemFrequencyPlot(trans,topN=15,type="absolute")
+```
+# Association Rules
+  
+  -Confidence is an indication of how often the rule has been found to be true.
+
+  -Support is an indication of how frequently the itemset appears in the dataset
+
+```{r}
+# Get the rules
+rules <- apriori(items.data, parameter = list(supp = 0.5, conf = 0.8,target = "rules",minlen=2))
+
+```
+
+```{r}
+summary(rules)
+```
+
+  -Model has 2109165 rules from 7500 transactions if minimum support of 0.04 is specified.
+
+  -The rules reduce to 425231 when minimum support is increased to 0.5. This is preffered to prevent persistent session crashes due to too many rules.
+
+  -when minlen=2 parameter is applied to eliminate the products whose LHS is blank, the rules are reduced to 425218
+
+Show top 5 rules
+
+```{r}
+inspect(rules[1:20])
+```
+
+If someone buys vegetables.mix, they are 100% likely to buy green.grapes too.
+
+If someon buys yams, they are 81% likely to buy green.grapes.
+
+
